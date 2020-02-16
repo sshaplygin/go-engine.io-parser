@@ -8,7 +8,7 @@ Official documentation engine.io protocol - [url](https://github.com/socketio/en
 
 # Gratitude
 
-More thanks by [@googolle](https://www.github.com/googolle) for created and migrated protocol to pure go
+More thanks by [@googolle](https://www.github.com/googolle) for created and migrated engine.io-parser protocol to pure go
 
 # Benchmarks
 

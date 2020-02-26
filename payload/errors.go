@@ -5,6 +5,20 @@ import (
 	"fmt"
 )
 
+var (
+	//
+	errPaused = retryError{"paused"}
+
+	//
+	errTimeout = errors.New("timeout")
+
+	//
+	errInvalidPayload = errors.New("invalid payload")
+
+	//
+	errOverlap = errors.New("overlap")
+)
+
 // Error is payload error.
 type Error interface {
 	Error() string
@@ -47,13 +61,3 @@ func (e retryError) Error() string {
 func (e retryError) Temporary() bool {
 	return true
 }
-
-var errPaused = retryError{"paused"}
-
-var errTimeout = errors.New("timeout")
-
-var errInvalidPayload = errors.New("invalid payload")
-
-var errDrain = errors.New("drain")
-
-var errOverlap = errors.New("overlap")

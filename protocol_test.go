@@ -1,12 +1,12 @@
-package packet
+package go_engine_io_parser
 
 import (
+	"github.com/go-engine.io-parser/packet"
 	"io"
 	"io/ioutil"
 	"testing"
 
 	"github.com/googollee/go-engine.io/base"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ type Frame struct {
 
 type Packet struct {
 	fType FrameType
-	pType PacketType
+	pType packet.PacketType
 	data  []byte
 }
 

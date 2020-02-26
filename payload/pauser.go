@@ -13,6 +13,7 @@ const (
 type pauser struct {
 	l       sync.Mutex
 	c       *sync.Cond
+
 	worker  int
 	pausing chan struct{}
 	paused  chan struct{}

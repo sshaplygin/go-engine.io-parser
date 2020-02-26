@@ -11,6 +11,7 @@ import (
 
 type byteReader interface {
 	ReadByte() (byte, error)
+
 	io.Reader
 }
 

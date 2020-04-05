@@ -1,4 +1,4 @@
-package payload
+package go_engine_io_parser
 
 import (
 	"bufio"

@@ -1,9 +1,5 @@
 package packet
 
-import "github.com/go-engine.io-parser/frame"
-
-const terminateByte = '0'
-
 // PacketType is the type of packet
 type PacketType int
 
@@ -53,18 +49,10 @@ func (id PacketType) String() string {
 
 // StringByte converts a PacketType to byte in string.
 func (id PacketType) StringByte() byte {
-	return byte(id) + terminateByte
+	return byte(id) + '0'
 }
 
 // BinaryByte converts a PacketType to byte in binary.
 func (id PacketType) BinaryByte() byte {
 	return byte(id)
-}
-
-// ByteToPacketType converts a byte to PacketType.
-func ByteToPacketType(b byte, typ frame.FrameType) PacketType {
-	if typ == frame.FrameString {
-		b -= terminateByte
-	}
-	return PacketType(b)
 }

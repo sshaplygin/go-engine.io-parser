@@ -1,13 +1,18 @@
-package payload
+package go_engine_io_parser
 
-import "bytes"
+import (
+	"bytes"
+
+	"github.com/mrfoe7/go-engine.io-parser/frame"
+	"github.com/mrfoe7/go-engine.io-parser/packet"
+)
 
 func writeBinaryLen(l int64, w *bytes.Buffer) error {
 	if l <= 0 {
-		if err := w.WriteByte(0x00); err != nil {
+		if err := w.WriteByte(StartByte); err != nil {
 			return err
 		}
-		if err := w.WriteByte(0xff); err != nil {
+		if err := w.WriteByte(TerminateByte); err != nil {
 			return err
 		}
 		return nil
@@ -29,10 +34,10 @@ func writeBinaryLen(l int64, w *bytes.Buffer) error {
 
 func writeTextLen(l int64, w *bytes.Buffer) error {
 	if l <= 0 {
-		if err := w.WriteByte('0'); err != nil {
+		if err := w.WriteByte(TerminateSymbol); err != nil {
 			return err
 		}
-		if err := w.WriteByte(':'); err != nil {
+		if err := w.WriteByte(SeparateSymbol); err != nil {
 			return err
 		}
 		return nil
@@ -43,13 +48,13 @@ func writeTextLen(l int64, w *bytes.Buffer) error {
 	}
 	for max > 0 {
 		n := l / max
-		if err := w.WriteByte(byte(n) + '0'); err != nil {
+		if err := w.WriteByte(byte(n) + TerminateSymbol); err != nil {
 			return err
 		}
 		l -= n * max
 		max /= 10
 	}
-	return w.WriteByte(':')
+	return w.WriteByte(SeparateSymbol)
 }
 
 func readBinaryLen(r byteReader) (int64, error) {
@@ -77,13 +82,24 @@ func readTextLen(r byteReader) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		if b == ':' {
+		if b == SeparateSymbol {
 			break
 		}
 		if b < '0' || b > '9' {
 			return 0, errInvalidPayload
 		}
-		ret = ret*10 + int64(b-'0')
+		ret = ret*10 + int64(b-TerminateSymbol)
 	}
 	return ret, nil
+}
+
+func byteToPacketType(b byte, typ frame.FrameType) packet.PacketType {
+	if typ == frame.FrameString {
+		b -= TerminateSymbol
+	}
+	return packet.PacketType(b)
+}
+
+func byteToFrameType(b byte) frame.FrameType {
+	return frame.FrameType(b)
 }

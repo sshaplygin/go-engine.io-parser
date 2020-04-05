@@ -1,14 +1,20 @@
-package payload
+package go_engine_io_parser
 
 import (
-	"fmt"
-	"github.com/go-engine.io-parser/frame"
-	"github.com/go-engine.io-parser/packet"
 	"io"
 	"math"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/mrfoe7/go-engine.io-parser/frame"
+	"github.com/mrfoe7/go-engine.io-parser/packet"
+)
+
+const (
+	operationRead    = "read"
+	operationWrite   = "write"
+	operationPayload = "payload"
 )
 
 type readArg struct {
@@ -39,7 +45,7 @@ type Payload struct {
 }
 
 // New returns a new payload.
-func New(supportBinary bool) *Payload {
+func NewPayload(supportBinary bool) *Payload {
 	ret := &Payload{
 		close:      make(chan struct{}),
 		pauser:     newPauser(),
@@ -71,11 +77,11 @@ func (p *Payload) FeedIn(r io.Reader, supportBinary bool) error {
 	}
 
 	if !atomic.CompareAndSwapInt64(&p.feeding, 0, 1) {
-		return newOpError("read", errOverlap)
+		return newOperationError(operationRead, errOverlap)
 	}
 	defer atomic.StoreInt64(&p.feeding, 0)
 	if ok := p.pauser.Working(); !ok {
-		return newOpError("payload", errPaused)
+		return newOperationError(operationPayload, errPaused)
 	}
 	defer p.pauser.Done()
 
@@ -108,7 +114,7 @@ func (p *Payload) FeedIn(r io.Reader, supportBinary bool) error {
 			// it may changed during wait, need check again
 			continue
 		case err := <-p.readError:
-			return p.Store("read", err)
+			return p.Store(operationRead, err)
 		}
 	}
 }
@@ -128,7 +134,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 	default:
 	}
 	if !atomic.CompareAndSwapInt64(&p.flushing, 0, 1) {
-		return newOpError("write", errOverlap)
+		return newOperationError(operationWrite, errOverlap)
 	}
 	defer atomic.StoreInt64(&p.flushing, 0)
 
@@ -159,13 +165,13 @@ func (p *Payload) FlushOut(w io.Writer) error {
 	for {
 		after, ok := p.writeTimeout()
 		if !ok {
-			return p.Store("write", errTimeout)
+			return p.Store(operationWrite, errTimeout)
 		}
 		select {
 		case <-after:
 		// it may changed during wait, need check again
 		case err := <-p.writeError:
-			return p.Store("write", err)
+			return p.Store(operationWrite, err)
 		}
 	}
 }
@@ -226,7 +232,6 @@ func (p *Payload) Pause() {
 // Resume resumes the payload.
 // It can call in multi-goroutine.
 func (p *Payload) Resume() {
-	fmt.Println("resume")
 	p.pauser.Resume()
 }
 
@@ -240,13 +245,14 @@ func (p *Payload) Close() error {
 }
 
 // Store stores a error in payload, and block all other request.
-func (p *Payload) Store(op string, err error) error {
+func (p *Payload) Store(operation string, err error) error {
 	old := p.err.Load()
+	//ref:
 	if old == nil {
-		if err == io.EOF || err == nil {
+		if err == io.EOF {
 			return err
 		}
-		op := newOpError(op, err)
+		op := newOperationError(operation, err)
 		p.err.Store(op)
 		return op
 	}
@@ -287,20 +293,20 @@ func (p *Payload) getReader() (io.Reader, bool, error) {
 	}
 
 	if ok := p.pauser.Working(); !ok {
-		return nil, false, newOpError("payload", errPaused)
+		return nil, false, newOperationError(operationPayload, errPaused)
 	}
 	p.pauser.Done()
 
 	for {
 		after, ok := p.readTimeout()
 		if !ok {
-			return nil, false, p.Store("read", errTimeout)
+			return nil, false, p.Store(operationRead, errTimeout)
 		}
 		select {
 		case <-p.close:
 			return nil, false, p.load()
 		case <-p.pauser.PausedTrigger():
-			return nil, false, newOpError("payload", errPaused)
+			return nil, false, newOperationError(operationPayload, errPaused)
 		case <-after:
 			continue
 		case arg := <-p.readerChan:
@@ -318,7 +324,7 @@ func (p *Payload) putReader(err error) error {
 	for {
 		after, ok := p.readTimeout()
 		if !ok {
-			return p.Store("read", errTimeout)
+			return p.Store(operationRead, errTimeout)
 		}
 		select {
 		case <-p.close:
@@ -339,7 +345,7 @@ func (p *Payload) getWriter() (io.Writer, error) {
 	}
 
 	if ok := p.pauser.Working(); !ok {
-		return nil, newOpError("payload", errPaused)
+		return nil, newOperationError(operationPayload, errPaused)
 	}
 	p.pauser.Done()
 
@@ -352,7 +358,7 @@ func (p *Payload) getWriter() (io.Writer, error) {
 		case <-p.close:
 			return nil, p.load()
 		case <-p.pauser.PausedTrigger():
-			return nil, newOpError("payload", errPaused)
+			return nil, newOperationError(operationPayload, errPaused)
 		case <-after:
 			continue
 		case w := <-p.writerChan:
@@ -370,9 +376,9 @@ func (p *Payload) putWriter(err error) error {
 	for {
 		after, ok := p.writeTimeout()
 		if !ok {
-			return p.Store("write", errTimeout)
+			return p.Store(operationWrite, errTimeout)
 		}
-		ret := p.Store("write", err)
+		ret := p.Store(operationWrite, err)
 		select {
 		case <-p.close:
 			return p.load()

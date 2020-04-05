@@ -1,4 +1,4 @@
-package payload
+package go_engine_io_parser
 
 import "sync"
 
@@ -11,13 +11,14 @@ const (
 )
 
 type pauser struct {
-	l       sync.Mutex
-	c       *sync.Cond
+	lock sync.Mutex
+	c    *sync.Cond
 
-	worker  int
+	worker int
+	status pauserStatus
+
 	pausing chan struct{}
 	paused  chan struct{}
-	status  pauserStatus
 }
 
 func newPauser() *pauser {
@@ -26,13 +27,13 @@ func newPauser() *pauser {
 		paused:  make(chan struct{}),
 		status:  statusNormal,
 	}
-	ret.c = sync.NewCond(&ret.l)
+	ret.c = sync.NewCond(&ret.lock)
 	return ret
 }
 
 func (p *pauser) Pause() bool {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
 
 	switch p.status {
 	case statusPaused:
@@ -57,16 +58,18 @@ func (p *pauser) Pause() bool {
 }
 
 func (p *pauser) Resume() {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	p.status = statusNormal
 	p.paused = make(chan struct{})
 	p.pausing = make(chan struct{})
 }
 
 func (p *pauser) Working() bool {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	if p.status == statusPaused {
 		return false
 	}
@@ -75,8 +78,9 @@ func (p *pauser) Working() bool {
 }
 
 func (p *pauser) Done() {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	if p.status == statusPaused || p.worker == 0 {
 		return
 	}
@@ -85,13 +89,15 @@ func (p *pauser) Done() {
 }
 
 func (p *pauser) PausingTrigger() <-chan struct{} {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	return p.pausing
 }
 
 func (p *pauser) PausedTrigger() <-chan struct{} {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	return p.paused
 }

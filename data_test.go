@@ -1,8 +1,8 @@
-package payload
+package go_engine_io_parser
 
 import (
-	"github.com/go-engine.io-parser/frame"
-	"github.com/go-engine.io-parser/packet"
+	"github.com/mrfoe7/go-engine.io-parser/frame"
+	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
 type Packet struct {
@@ -16,9 +16,16 @@ var tests = []struct {
 	data          []byte
 	packets       []Packet
 }{
-	{true, []byte{0x00, 0x01, 0xff, '0'}, []Packet{
-		{frame.FrameString, packet.OPEN, []byte{}},
-	}},
+	{true,
+		[]byte{0x00, 0x01, 0xff, '0'},
+		[]Packet{
+			{
+				frame.FrameString,
+				packet.OPEN,
+				[]byte{},
+			},
+		},
+	},
 	{true, []byte{0x00, 0x01, 0x03, 0xff, '4', 'h', 'e', 'l', 'l', 'o', ' ', 0xe4, 0xbd, 0xa0, 0xe5, 0xa5, 0xbd}, []Packet{
 		{frame.FrameString, packet.MESSAGE, []byte("hello 你好")},
 	}},

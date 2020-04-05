@@ -1,4 +1,4 @@
-module github.com/go-engine.io-parser
+module github.com/mrfoe7/go-engine.io-parser
 
 go 1.13
 

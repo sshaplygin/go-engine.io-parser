@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/googollee/go-engine.io/base"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -106,7 +104,7 @@ func TestPayloadFlushOutText(t *testing.T) {
 	}
 
 	p.SetWriteDeadline(time.Now().Add(time.Second / 10))
-	_, err := p.NextWriter(base.FrameBinary, base.OPEN)
+	_, err := p.NextWriter(unit.FrameBinary, unit.OPEN)
 	should.Equal("write: timeout", err.Error())
 
 	wg.Wait()

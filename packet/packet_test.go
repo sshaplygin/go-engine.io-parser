@@ -1,7 +1,7 @@
 package packet
 
 import (
-	"github.com/mrfoe7/go-engine.io-parser/frame"
+	"github.com/go-engine.io-parser/frame"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

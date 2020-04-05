@@ -2,13 +2,13 @@ package payload
 
 import (
 	"fmt"
+	"github.com/go-engine.io-parser/frame"
+	"github.com/go-engine.io-parser/packet"
 	"io"
 	"math"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/googollee/go-engine.io/base"
 )
 
 type readArg struct {
@@ -18,21 +18,22 @@ type readArg struct {
 
 // Payload does encode or decode to payload protocol.
 type Payload struct {
-	close     chan struct{}
 	closeOnce sync.Once
 	err       atomic.Value
 
 	pauser *pauser
 
-	readerChan   chan readArg
+	close      chan struct{}
+	readerChan chan readArg
+	readError  chan error
+	writerChan chan io.Writer
+	writeError chan error
+
 	feeding      int64
-	readError    chan error
 	readDeadline atomic.Value
 	decoder      decoder
 
-	writerChan    chan io.Writer
 	flushing      int64
-	writeError    chan error
 	writeDeadline atomic.Value
 	encoder       encoder
 }
@@ -162,7 +163,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 		}
 		select {
 		case <-after:
-			// it may changed during wait, need check again
+		// it may changed during wait, need check again
 		case err := <-p.writeError:
 			return p.Store("write", err)
 		}
@@ -175,7 +176,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 // If Close called when NextReader,  it return io.EOF.
 // Pause doesn't effect to NextReader. NextReader should wait till resumed
 // and next FeedIn.
-func (p *Payload) NextReader() (base.FrameType, base.PacketType, io.ReadCloser, error) {
+func (p *Payload) NextReader() (frame.FrameType, packet.PacketType, io.ReadCloser, error) {
 	ft, pt, r, err := p.decoder.NextReader()
 	return ft, pt, r, err
 }
@@ -201,7 +202,7 @@ func (p *Payload) SetReadDeadline(t time.Time) error {
 // If Close called when NextWriter,  it returns io.EOF.
 // If beyond the time set by SetWriteDeadline, it returns ErrTimeout.
 // If Pause called when NextWriter, it returns ErrPaused.
-func (p *Payload) NextWriter(ft base.FrameType, pt base.PacketType) (io.WriteCloser, error) {
+func (p *Payload) NextWriter(ft frame.FrameType, pt packet.PacketType) (io.WriteCloser, error) {
 	return p.encoder.NextWriter(ft, pt)
 }
 

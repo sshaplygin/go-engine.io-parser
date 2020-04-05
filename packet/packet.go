@@ -1,8 +1,6 @@
 package packet
 
-import (
-	"github.com/mrfoe7/go-engine.io-parser/frame"
-)
+import "github.com/go-engine.io-parser/frame"
 
 const terminateByte = '0'
 

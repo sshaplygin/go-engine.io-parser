@@ -1,15 +1,13 @@
 package frame
 
 import (
+	"github.com/go-engine.io-parser/packet"
 	"io"
-
-	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
 // FrameType is the type of frames.
 type FrameType byte
 
-//docs: mb with <<
 const (
 	// FrameString identifies a string frame.
 	FrameString FrameType = iota

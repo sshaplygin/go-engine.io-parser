@@ -1,8 +1,9 @@
 package go_engine_io_parser
 
 import (
-	"github.com/go-engine.io-parser/frame"
 	"io"
+
+	"github.com/mrfoe7/go-engine.io-parser"
 )
 
 // FrameReader is the reader which supports framing

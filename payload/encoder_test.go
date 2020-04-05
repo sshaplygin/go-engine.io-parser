@@ -3,12 +3,14 @@ package payload
 import (
 	"bytes"
 	"errors"
+	"github.com/go-engine.io-parser/frame"
+	"github.com/go-engine.io-parser/packet"
 	"io"
 	"io/ioutil"
 	"sync"
 	"testing"
 
-	"github.com/googollee/go-engine.io/base"
+	"github.com/go-engine.io-parser/units"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,9 +51,9 @@ func TestEncoder(t *testing.T) {
 		}
 
 		for _, packet := range test.packets {
-			fw, err := e.NextWriter(packet.ft, packet.pt)
+			fw, err := e.NextWriter(units.ft, units.pt)
 			must.Nil(err)
-			_, err = fw.Write(packet.data)
+			_, err = fw.Write(units.data)
 			must.Nil(err)
 			err = fw.Close()
 			must.Nil(err)
@@ -76,7 +78,7 @@ func TestEncoderBeginError(t *testing.T) {
 	targetErr := newOpError("payload", errPaused)
 	f.returnError = targetErr
 
-	_, err := e.NextWriter(base.FrameBinary, base.OPEN)
+	_, err := e.NextWriter(frame.FrameBinary, packet.OPEN)
 	assert.Equal(targetErr, err)
 }
 
@@ -104,7 +106,7 @@ func TestEncoderEndError(t *testing.T) {
 
 	targetErr := errors.New("error")
 
-	fw, err := e.NextWriter(base.FrameBinary, base.OPEN)
+	fw, err := e.NextWriter(frame.FrameBinary, packet.OPEN)
 	must.Nil(err)
 	f.returnError = targetErr
 	err = fw.Close()
@@ -149,9 +151,9 @@ func TestEncoderNOOP(t *testing.T) {
 func BenchmarkStringEncoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{base.FrameString, base.OPEN, []byte{}},
-		{base.FrameString, base.MESSAGE, []byte("你好\n")},
-		{base.FrameString, base.PING, []byte("probe")},
+		{frame.FrameString, packet.OPEN, []byte{}},
+		{frame.FrameString, packet.MESSAGE, []byte("你好\n")},
+		{frame.FrameString, packet.PING, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: false,
@@ -183,9 +185,9 @@ func BenchmarkStringEncoder(b *testing.B) {
 func BenchmarkB64Encoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{base.FrameBinary, base.OPEN, []byte{}},
-		{base.FrameBinary, base.MESSAGE, []byte("你好\n")},
-		{base.FrameBinary, base.PING, []byte("probe")},
+		{frame.FrameBinary, packet.OPEN, []byte{}},
+		{frame.FrameBinary, packet.MESSAGE, []byte("你好\n")},
+		{frame.FrameBinary, packet.PING, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: false,
@@ -217,9 +219,9 @@ func BenchmarkB64Encoder(b *testing.B) {
 func BenchmarkBinaryEncoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{base.FrameString, base.OPEN, []byte{}},
-		{base.FrameBinary, base.MESSAGE, []byte("你好\n")},
-		{base.FrameString, base.PING, []byte("probe")},
+		{frame.FrameString, packet.OPEN, []byte{}},
+		{frame.FrameBinary, packet.MESSAGE, []byte("你好\n")},
+		{frame.FrameString, packet.PING, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: true,

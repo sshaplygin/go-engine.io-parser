@@ -11,13 +11,13 @@ var tests = []struct {
 	data          []byte
 	packets       []Packet
 }{
-	{true,
-		[]byte{0x00, 0x01, 0xff, '0'},
-		[]Packet{
+	{supportBinary: true,
+		data: []byte{0x00, 0x01, 0xff, '0'},
+		packets: []Packet{
 			{
-				FrameString,
-				Open,
-				[]byte{},
+				ft:   FrameString,
+				pt:   Open,
+				data: []byte{},
 			},
 		},
 	},

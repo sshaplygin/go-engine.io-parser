@@ -2,9 +2,6 @@ package go_engine_io_parser
 
 import (
 	"bytes"
-
-	"github.com/mrfoe7/go-engine.io-parser/frame"
-	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
 func writeBinaryLen(l int64, w *bytes.Buffer) error {
@@ -93,13 +90,13 @@ func readTextLen(r byteReader) (int64, error) {
 	return ret, nil
 }
 
-func byteToPacketType(b byte, typ frame.FrameType) packet.PacketType {
-	if typ == frame.FrameString {
+func byteToPacketType(b byte, typ FrameType) Type {
+	if typ == FrameString {
 		b -= TerminateSymbol
 	}
-	return packet.PacketType(b)
+	return Type(b)
 }
 
-func byteToFrameType(b byte) frame.FrameType {
-	return frame.FrameType(b)
+func byteToFrameType(b byte) FrameType {
+	return FrameType(b)
 }

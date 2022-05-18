@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"io"
-
-	"github.com/mrfoe7/go-engine.io-parser/frame"
-	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
-// FrameWriter writes a frame. It need be closed before next writing.
+// Writer writes a frame. It need be Closed before next writing.
 type Writer interface {
-	NextWriter(ft frame.FrameType, pt packet.PacketType) (io.WriteCloser, error)
+	NextWriter(ft FrameType, pt Type) (io.WriteCloser, error)
 }
 
 type writerFeeder interface {
@@ -23,22 +20,22 @@ type encoder struct {
 	supportBinary bool
 	feeder        writerFeeder
 
-	ft         frame.FrameType
-	pt         packet.PacketType
+	ft         FrameType
+	pt         Type
 	header     bytes.Buffer
 	frameCache bytes.Buffer
 	b64Writer  io.WriteCloser
 	rawWriter  io.Writer
 }
 
-func (e *encoder) NOOP() []byte {
+func (e *encoder) Noop() []byte {
 	if e.supportBinary {
 		return []byte{0x00, 0x01, 0xff, '6'}
 	}
 	return []byte("1:6")
 }
 
-func (e *encoder) NextWriter(ft frame.FrameType, pt packet.PacketType) (io.WriteCloser, error) {
+func (e *encoder) NextWriter(ft FrameType, pt Type) (io.WriteCloser, error) {
 	w, err := e.feeder.getWriter()
 	if err != nil {
 		return nil, err
@@ -49,7 +46,7 @@ func (e *encoder) NextWriter(ft frame.FrameType, pt packet.PacketType) (io.Write
 	e.pt = pt
 	e.frameCache.Reset()
 
-	if !e.supportBinary && ft == frame.FrameBinary {
+	if !e.supportBinary && ft == FrameBinary {
 		e.b64Writer = base64.NewEncoder(base64.StdEncoding, &e.frameCache)
 	} else {
 		e.b64Writer = nil
@@ -73,7 +70,7 @@ func (e *encoder) Close() error {
 	if e.supportBinary {
 		writeHeader = e.writeBinaryHeader
 	} else {
-		if e.ft == frame.FrameBinary {
+		if e.ft == FrameBinary {
 			writeHeader = e.writeB64Header
 		} else {
 			writeHeader = e.writeTextHeader
@@ -116,8 +113,8 @@ func (e *encoder) writeB64Header() error {
 func (e *encoder) writeBinaryHeader() error {
 	l := int64(e.frameCache.Len() + 1) // length for packet type
 	b := e.pt.StringByte()
-	if e.ft == frame.FrameBinary {
-		b = e.pt.BinaryByte()
+	if e.ft == FrameBinary {
+		b = e.pt.Byte()
 	}
 	err := e.header.WriteByte(e.ft.Byte())
 	if err == nil {

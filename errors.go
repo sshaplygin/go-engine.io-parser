@@ -32,7 +32,7 @@ func newOperationError(operation string, err error) error {
 	}
 }
 
-// Error implemented Error interface
+// Error implemented Error interface.
 func (e *OperationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Operation, e.Errors.Error())
 }
@@ -40,16 +40,4 @@ func (e *OperationError) Error() string {
 // Temporary returns true if error can retry.
 func (e *OperationError) Temporary() bool {
 	return e.Errors != nil
-}
-
-type retryError struct {
-	err string
-}
-
-func (e retryError) Error() string {
-	return e.err
-}
-
-func (e retryError) Temporary() bool {
-	return true
 }

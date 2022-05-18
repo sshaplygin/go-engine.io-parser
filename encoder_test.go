@@ -10,9 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/mrfoe7/go-engine.io-parser/frame"
-	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
 var (
@@ -74,7 +71,7 @@ func TestEncoderBeginError(t *testing.T) {
 	targetErr := newOperationError("payload", errPaused)
 	f.returnError = targetErr
 
-	_, err := e.NextWriter(frame.FrameBinary, packet.OPEN)
+	_, err := e.NextWriter(FrameBinary, Open)
 	assert.Equal(t, targetErr, err)
 }
 
@@ -99,7 +96,7 @@ func TestEncoderEndError(t *testing.T) {
 
 	targetErr := errors.New("error")
 
-	fw, err := e.NextWriter(frame.FrameBinary, packet.OPEN)
+	fw, err := e.NextWriter(FrameBinary, Open)
 	require.Nil(t, err)
 	f.returnError = targetErr
 	err = fw.Close()
@@ -107,7 +104,7 @@ func TestEncoderEndError(t *testing.T) {
 	assert.Equal(t, f.passingErr, writeErr)
 }
 
-func TestEncoderNOOP(t *testing.T) {
+func TestEncoderNoop(t *testing.T) {
 	assert := assert.New(t)
 
 	tests := []struct {
@@ -122,10 +119,10 @@ func TestEncoderNOOP(t *testing.T) {
 		e := encoder{
 			supportBinary: test.supportBinary,
 		}
-		assert.Equal(test.data, e.NOOP())
+		assert.Equal(test.data, e.Noop())
 	}
 
-	// NOOP should be thread-safe
+	// Noop should be thread-safe
 	var wg sync.WaitGroup
 	max := 100
 	wg.Add(100)
@@ -135,7 +132,7 @@ func TestEncoderNOOP(t *testing.T) {
 			e := encoder{
 				supportBinary: i&0x1 == 0,
 			}
-			e.NOOP()
+			e.Noop()
 		}(i)
 	}
 	wg.Wait()
@@ -144,9 +141,9 @@ func TestEncoderNOOP(t *testing.T) {
 func BenchmarkStringEncoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{frame.FrameString, packet.OPEN, []byte{}},
-		{frame.FrameString, packet.MESSAGE, []byte("你好\n")},
-		{frame.FrameString, packet.PING, []byte("probe")},
+		{FrameString, Open, []byte{}},
+		{FrameString, Message, []byte("你好\n")},
+		{FrameString, Ping, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: false,
@@ -178,9 +175,9 @@ func BenchmarkStringEncoder(b *testing.B) {
 func BenchmarkB64Encoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{frame.FrameBinary, packet.OPEN, []byte{}},
-		{frame.FrameBinary, packet.MESSAGE, []byte("你好\n")},
-		{frame.FrameBinary, packet.PING, []byte("probe")},
+		{FrameBinary, Open, []byte{}},
+		{FrameBinary, Message, []byte("你好\n")},
+		{FrameBinary, Ping, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: false,
@@ -212,9 +209,9 @@ func BenchmarkB64Encoder(b *testing.B) {
 func BenchmarkBinaryEncoder(b *testing.B) {
 	must := require.New(b)
 	packets := []Packet{
-		{frame.FrameString, packet.OPEN, []byte{}},
-		{frame.FrameBinary, packet.MESSAGE, []byte("你好\n")},
-		{frame.FrameString, packet.PING, []byte("probe")},
+		{FrameString, Open, []byte{}},
+		{FrameBinary, Message, []byte("你好\n")},
+		{FrameString, Ping, []byte("probe")},
 	}
 	e := encoder{
 		supportBinary: true,

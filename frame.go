@@ -1,4 +1,4 @@
-package frame
+package go_engine_io_parser
 
 // FrameType is the type of frames.
 type FrameType byte

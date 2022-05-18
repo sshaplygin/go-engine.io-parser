@@ -6,9 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/mrfoe7/go-engine.io-parser/frame"
-	"github.com/mrfoe7/go-engine.io-parser/packet"
 )
 
 const (
@@ -24,7 +21,7 @@ type readArg struct {
 
 // Payload does encode or decode to payload protocol.
 type Payload struct {
-	closeOnce sync.Once
+	CloseOnce sync.Once
 	err       atomic.Value
 
 	pauser *pauser
@@ -44,7 +41,7 @@ type Payload struct {
 	encoder       encoder
 }
 
-// New returns a new payload.
+// NewPayload returns a new payload.
 func NewPayload(supportBinary bool) *Payload {
 	ret := &Payload{
 		close:      make(chan struct{}),
@@ -123,7 +120,7 @@ func (p *Payload) FeedIn(r io.Reader, supportBinary bool) error {
 // FlushOut needs be called sync.
 //
 // If Close called when Flushout,  it return io.EOF.
-// If Pause called when Flushout, it flushs out a NOOP message and return
+// If Pause called when Flushout, it flushs out a Noop Message and return
 // nil.
 // If NextWriter has timeout, it returns ErrTimeout.
 // If write error while FlushOut, it returns write error.
@@ -139,7 +136,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 	defer atomic.StoreInt64(&p.flushing, 0)
 
 	if ok := p.pauser.Working(); !ok {
-		_, err := w.Write(p.encoder.NOOP())
+		_, err := w.Write(p.encoder.Noop())
 		return err
 	}
 	defer p.pauser.Done()
@@ -155,7 +152,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 		case <-after:
 			continue
 		case <-p.pauser.PausingTrigger():
-			_, err := w.Write(p.encoder.NOOP())
+			_, err := w.Write(p.encoder.Noop())
 			return err
 		case p.writerChan <- w:
 		}
@@ -182,7 +179,7 @@ func (p *Payload) FlushOut(w io.Writer) error {
 // If Close called when NextReader,  it return io.EOF.
 // Pause doesn't effect to NextReader. NextReader should wait till resumed
 // and next FeedIn.
-func (p *Payload) NextReader() (frame.FrameType, packet.PacketType, io.ReadCloser, error) {
+func (p *Payload) NextReader() (FrameType, Type, io.ReadCloser, error) {
 	ft, pt, r, err := p.decoder.NextReader()
 	return ft, pt, r, err
 }
@@ -208,7 +205,7 @@ func (p *Payload) SetReadDeadline(t time.Time) error {
 // If Close called when NextWriter,  it returns io.EOF.
 // If beyond the time set by SetWriteDeadline, it returns ErrTimeout.
 // If Pause called when NextWriter, it returns ErrPaused.
-func (p *Payload) NextWriter(ft frame.FrameType, pt packet.PacketType) (io.WriteCloser, error) {
+func (p *Payload) NextWriter(ft FrameType, pt Type) (io.WriteCloser, error) {
 	return p.encoder.NextWriter(ft, pt)
 }
 
@@ -222,7 +219,7 @@ func (p *Payload) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-// Pause pauses the payload. It will wait all reader and writer closed which
+// Pause pauses the payload. It will wait all reader and writer Closed which
 // created from NextReader or NextWriter.
 // It can call in multi-goroutine.
 func (p *Payload) Pause() {
@@ -235,10 +232,10 @@ func (p *Payload) Resume() {
 	p.pauser.Resume()
 }
 
-// Close closes the payload.
+// Close the payload.
 // It can call in multi-goroutine.
 func (p *Payload) Close() error {
-	p.closeOnce.Do(func() {
+	p.CloseOnce.Do(func() {
 		close(p.close)
 	})
 	return nil
